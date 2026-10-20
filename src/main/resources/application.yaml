@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: agent-digest
+  main:
+    web-application-type: none
+    banner-mode: "off"

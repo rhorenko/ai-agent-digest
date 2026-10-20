@@ -1,0 +1,8 @@
+name: agent-digest
+
+services:
+  app:
+    image: "${IMAGE_NAME:-agent-digest}:${IMAGE_TAG:-local}"
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
