@@ -1,25 +1,23 @@
 # Testing
 
-## Standard verification
-
-```powershell
+~~~powershell
 .\mvnw.cmd verify
-# or from any directory
-& '<repository>\scripts\verify.ps1'
-```
+.\mvnw.cmd '-Dtest=QaBoundaryTests' test
+~~~
 
-On Linux/macOS use `./mvnw verify`. The Maven `verify` lifecycle compiles with Java release 25, runs JUnit Jupiter tests, and builds the executable Spring Boot JAR.
+Normal verify requires Docker and runs real Mongo 8.0.16 Testcontainers, localhost HTTP stubs and plain logic tests. One Spring lifecycle test verifies configuration/startup failure. Automated tests never call paid Claude or real Telegram.
 
-## Focused checks
+If Docker is unavailable explicitly use -Ddigest.skipMongoTests=true and record persistence as unverified. Normal acceptance requires zero skips. Cleanup drops only a generated test database inside its disposable container.
 
-Run one test while developing:
+Coverage: valid/empty/irrelevant selection; missing/extra/duplicate/unknown/invalid model fields; English text limits; dates/window/XXE; URL normalization; persistence/order/dedup/reruns; lock ownership/crash; safe recovery without Claude; database failure before delivery; Telegram success/rejection/429/timeout/unknown; context/HTTP limits; configuration and exits. Fixtures cannot prove real model judgment.
 
-```powershell
-.\mvnw.cmd -Dtest=AgentDigestApplicationTests test
-```
+For offline execution see README. Use separate JAR/container databases ending _offline. After two runs in a fresh fixture database:
 
-Prefer plain unit tests for ordinary logic. Use `@SpringBootTest` only when Spring wiring or lifecycle is part of the behavior under test.
+~~~javascript
+db.news.countDocuments({})                  // 1
+db.news.countDocuments({status:"DELIVERED"}) // 1
+db.runs.find({}, {status:1,exitCode:1,delivered:1})
+db.locks.countDocuments({})                 // 0
+~~~
 
-## Acceptance evidence
-
-Map feature acceptance IDs to checks in `doc/acceptance-matrix.md`. Record exact commands and actual results in `doc/verification-report.md`. Include negative and boundary scenarios. Never infer PASS from code review alone.
+Check $LASTEXITCODE immediately. Busy/unresolved/config-failure container paths must return 3/2/1. Evidence is recorded in verification-report.md and acceptance-matrix.md.

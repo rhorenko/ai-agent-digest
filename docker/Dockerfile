@@ -7,7 +7,7 @@ COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw --batch-mode --no-transfer-progress dependency:go-offline
 
 COPY src/ src/
-RUN ./mvnw --batch-mode --no-transfer-progress package
+RUN ./mvnw --batch-mode --no-transfer-progress -DskipTests package
 
 FROM eclipse-temurin:25.0.2_10-jre-noble AS runtime
 

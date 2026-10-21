@@ -1,8 +1,54 @@
 name: agent-digest
 
 services:
+  mongo:
+    image: mongo:8.0.16
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "127.0.0.1:${MONGODB_PORT:-27019}:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.adminCommand('ping').ok ? 0 : 1)"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    # Intentionally local-only. Configure Mongo authentication/TLS for deployment elsewhere.
+
   app:
     image: "${IMAGE_NAME:-agent-digest}:${IMAGE_TAG:-local}"
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      DIGEST_OFFLINE: ${DIGEST_OFFLINE:-false}
+      DIGEST_RECOVERY_ONLY: ${DIGEST_RECOVERY_ONLY:-false}
+      DIGEST_PROFILE: ${DIGEST_PROFILE:-Senior Java Developer; Java, Spring Boot, Maven, MongoDB, PostgreSQL, Kafka; personal products and Telegram bots; Claude, Codex, GitHub Copilot, BMAD; agent workflows, harness engineering, context management, architecture, testing, independent verification and operating costs}
+      DIGEST_WINDOW: ${DIGEST_WINDOW:-30d}
+      DIGEST_MAX_ITEMS: ${DIGEST_MAX_ITEMS:-2}
+      DIGEST_MAX_CANDIDATES: ${DIGEST_MAX_CANDIDATES:-60}
+      DIGEST_EXCERPT_CHARS: ${DIGEST_EXCERPT_CHARS:-1500}
+      DIGEST_MAX_CONTEXT_CHARS: ${DIGEST_MAX_CONTEXT_CHARS:-40000}
+      DIGEST_TIMEOUT: ${DIGEST_TIMEOUT:-30s}
+      DIGEST_MAX_RESPONSE_BYTES: ${DIGEST_MAX_RESPONSE_BYTES:-2000000}
+      DIGEST_FEEDS: ${DIGEST_FEEDS:-https://github.blog/changelog/feed/,https://github.blog/ai-and-ml/feed/,https://github.blog/engineering/feed/,https://openai.com/news/rss.xml,https://simonwillison.net/atom/entries/,https://huggingface.co/blog/feed.xml,https://blog.google/innovation-and-ai/technology/ai/rss/,https://research.google/blog/rss/,https://www.microsoft.com/en-us/research/feed/,https://devblogs.microsoft.com/agent-framework/feed/,https://blogs.nvidia.com/feed/,https://aws.amazon.com/blogs/machine-learning/feed/,https://blog.jetbrains.com/ai/feed/,https://blog.jetbrains.com/idea/feed/,https://spring.io/blog.atom,https://inside.java/feed.xml,https://www.docker.com/feed/,https://feed.infoq.com/,https://stackoverflow.blog/feed/,https://ollama.com/blog/rss.xml}
+      MONGODB_URI: mongodb://mongo:27017/?retryWrites=true&w=majority
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-agent_digest}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-}
+      CLAUDE_ENDPOINT: ${CLAUDE_ENDPOINT:-https://api.anthropic.com/v1/messages}
+      CLAUDE_MAX_TOKENS: ${CLAUDE_MAX_TOKENS:-16000}
+      CLAUDE_RETRIES: ${CLAUDE_RETRIES:-1}
+      CLAUDE_EFFORT: ${CLAUDE_EFFORT:-low}
+      CLAUDE_TIMEOUT: ${CLAUDE_TIMEOUT:-120s}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      TELEGRAM_ENDPOINT: ${TELEGRAM_ENDPOINT:-https://api.telegram.org}
+      TELEGRAM_RETRIES: ${TELEGRAM_RETRIES:-1}
+      TELEGRAM_MAX_RETRY_AFTER: ${TELEGRAM_MAX_RETRY_AFTER:-30s}
+      TELEGRAM_INTERVAL: ${TELEGRAM_INTERVAL:-1s}
+
+volumes:
+  mongo-data:

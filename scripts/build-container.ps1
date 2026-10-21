@@ -7,10 +7,15 @@ param(
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $composeFile = Join-Path $projectRoot 'docker\compose.yaml'
+$composeArguments = @('--file', $composeFile)
+$envFile = Join-Path $projectRoot '.env'
+if (Test-Path -LiteralPath $envFile) {
+    $composeArguments += @('--env-file', $envFile)
+}
 
 Push-Location $projectRoot
 try {
-    & docker compose --file $composeFile build @Arguments
+    & docker compose @composeArguments build @Arguments
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }

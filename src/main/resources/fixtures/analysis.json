@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "candidateId": "{{CANDIDATE_ID}}",
+      "score": 8,
+      "summary": "Synthetic example: independent verification of agent changes and measuring cycle costs.",
+      "relevance": "Useful for Java projects and quality control in agent development.",
+      "takeaway": "Add independent test execution and cost tracking to the agent workflow.",
+      "scoreReason": "Practical benefits for verifying architecture and costs."
+    }
+  ]
+}

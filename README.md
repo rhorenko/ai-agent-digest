@@ -1,105 +1,54 @@
-# Java 25 agent-development template
+# Agentic News Digest
 
-A reusable Maven project for minimal Spring Boot applications and file-guided agent work. It contains no product integrations or domain logic. Roles are repository conventions, not an installed multi-agent framework.
+One-shot Java 25 / Spring Boot 4.0.5: verified RSS/Atom candidates в†’ one structured Claude selection в†’ MongoDB в†’ individual English Telegram messages. Defaults: 20 feeds, a rolling 30-day window, up to two useful items; empty selection sends nothing. Existing package, coordinates, roles and scripts are retained.
 
-## Prerequisites
+No spring-claude dependency was present. [ADR 0001](doc/adr/0001-bounded-feed-pipeline.md) records the documented Messages HTTP integration.
 
-- JDK 25
-- Git
-- Docker with Compose for container workflows
-- PowerShell 7 or Windows PowerShell 5.1 for `scripts/*.ps1`
+## Verify and run offline
 
-Maven installation is not required; use the checked-in Maven Wrapper.
+Requires JDK 25 and Docker (including real Mongo Testcontainers).
 
-## Repository layout
-
-- `AGENTS.md` — entry point for Codex and workflow rules.
-- `roles/` — sponsor, product, architecture, development, and QA instructions.
-- `doc/` — product artifacts, current state, templates, evidence, and runbooks.
-- `src/` — minimal one-shot Spring Boot application and tests.
-- `docker/` — image and Compose definitions.
-- `scripts/` — location-independent PowerShell helpers.
-
-## Build and test
-
-On Linux/macOS:
-
-```bash
-./mvnw verify
-```
-
-On Windows:
-
-```powershell
+~~~powershell
 .\mvnw.cmd verify
-# or
-.\scripts\verify.ps1
-```
-
-## Run locally
-
-```powershell
-.\scripts\run-local.ps1
-```
-
-Or package and run directly:
-
-```powershell
-.\mvnw.cmd package
-java -jar .\target\agent-digest-0.0.1-SNAPSHOT.jar
-```
-
-The application prints `Application completed successfully.` and exits with code 0. Replace the demonstration `ApplicationRunner` in `AgentDigestApplication` with the concrete product entry flow. Change the execution model when a future product must be a server or long-running worker.
-
-## Run with Docker
-
-```powershell
 .\scripts\build-container.ps1
-.\scripts\run-container.ps1
-```
+docker compose -f docker/compose.yaml up -d --wait mongo
+.\scripts\run-container.ps1 --digest.offline=true --digest.database=agent_digest_offline
+~~~
 
-Equivalent Compose commands from the repository root:
+Repeat the last command: delivered=0, no duplicate. Offline mode uses synthetic feed/model fixtures, the same validator/storage/processor, real MongoDB and console delivery. No credentials or external API calls. Offline databases must end in _offline or _test. Tests use local HTTP stubs and disposable Mongo databases. Image packaging skips tests; run host verify first.
 
-```powershell
-docker compose -f docker/compose.yaml build
-docker compose -f docker/compose.yaml run --rm app
-```
+## Local JAR
 
-See `doc/runbooks/container-build.md` and `doc/runbooks/deployment.md` for configuration, logs, exit codes, and cleanup.
+~~~powershell
+java -jar target/agent-digest-0.0.1-SNAPSHOT.jar --digest.offline=true --digest.mongo-uri=mongodb://localhost:27019 --digest.database=agent_digest_offline
+~~~
 
-## Use the roles
+Mongo host port defaults to 27019, loopback only; Compose containers use mongo:27017. Keep demo and live databases separate.
 
-Examples:
+## Live configuration
 
-- `Work as po: prepare requirements for …`
-- `Work as architect: analyze feature …`
-- `Work as dev: implement feature …`
-- `Work as qa: verify feature …`
-- `Take the task through the roles from idea to verified delivery`
+Copy .env.example to local .env. Set ANTHROPIC_API_KEY, CLAUDE_MODEL (recommended claude-opus-5-5; claude-sonnet-5-5 is cheaper), TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, MONGODB_DATABASE=agent_digest and DIGEST_OFFLINE=false. Container scripts use root .env automatically. Run scripts/run-container.ps1 intentionally when you want paid analysis and real delivery.
 
-The agent reads `AGENTS.md`, `doc/project-state.md`, and the selected lowercase file under `roles/`. For a full cycle it proceeds sequentially; a small task does not require every role or document.
+Java does not load dotenv files automatically: export environment variables or use an untracked external YAML. MONGODB_URI configures the JAR; Compose uses its internal Mongo service. Profile, feeds, window, counts, token/context/time limits and retry/delivery settings are external; see [.env.example](.env.example). Never put secrets in command arguments or Git.
 
-## Create the first feature
+## News window, sources and count
 
-1. Fill in the relevant product sections of `doc/project-brief.md` and `doc/requirements.md`.
-2. Copy `doc/features/_template.md` to `doc/features/feat-001-short-name.md`.
-3. Assign stable requirement and acceptance IDs and update `doc/backlog.md`.
-4. Create `doc/plans/feat-001-plan.md` from the plan template before non-trivial implementation.
-5. Link checks and actual outcomes in the acceptance matrix and verification report.
+Defaults live in [application.yaml](src/main/resources/application.yaml); [.env.example](.env.example) and Compose use the same values. IDE/JAR launches accept environment variables or program arguments:
 
-## Continue in a new chat
+~~~text
+--digest.window=30d --digest.max-items=2 --digest.max-candidates=60
+~~~
 
-Ask the agent to read `AGENTS.md` and continue from `doc/project-state.md`. That file points to the active role, feature, plan, decisions, known blockers, checks, and exact next action without requiring the entire history.
+`DIGEST_WINDOW=30d` is the previous 30 days, not the previous calendar month. `DIGEST_MAX_ITEMS=2` caps both the new selection and total deliveries per run, including stored pending items; it does not guarantee two suitable news items. `DIGEST_MAX_CANDIDATES=60` bounds unique article link checks; the separate 40000-character context cap can reduce what Claude sees. `DIGEST_FEEDS` is a comma-separated list of HTTPS feeds (up to 30).
 
-## Adapt this template
+Existing environment variables, external YAML or IDE arguments override repository defaults. Remove an old `DIGEST_FEEDS` override to use the new 20-source list, or replace it with the list in `.env.example`. A Spring `local` profile alone does not import `.env`. See the [configuration table and source list](doc/runbooks/local-development.md).
 
-- [ ] Update project name and description.
-- [ ] Change Maven coordinates if the product needs different ownership.
-- [ ] Rename the Java package and directories consistently.
-- [ ] Rename or replace the main class and demonstration runner.
-- [ ] Complete the product brief with confirmed facts.
-- [ ] Add only configuration the product actually uses; update `.env.example` files.
-- [ ] Set the desired container image name in `docker/.env.example` or the environment.
-- [ ] Remove demonstration content after product behavior replaces it.
+## Recovery and limits
 
-Detailed local, test, container, deployment, and troubleshooting guidance lives in `doc/runbooks/`.
+--digest.recovery-only=true skips feeds/Claude and retries stored safe pending items. Exit codes: 0 success/empty, 1 operational/config failure, 2 unresolved delivery, 3 overlapping batch. UNKNOWN never retries automatically. Exactly-once is not promised; see [operations](doc/runbooks/deployment.md) before reconciliation or removing a stale lock.
+
+Default coverage: 20 feeds spanning AI/agents and Java development, including GitHub, OpenAI, Hugging Face, Google Research, Microsoft, JetBrains, Inside Java, InfoQ and Ollama. Only recent dated entries with verified original links qualify. Analysis uses feed excerpts/headlines, never claimed as full-text. See [source coverage](doc/runbooks/local-development.md).
+
+English is the only supported delivery language. Claude selects English titles/source material and writes English analysis. Java rejects non-Latin letters in titles/analysis, including stored recovery items; Latin-script language identification still depends on the model. Existing stored content is not translated automatically.
+
+[Feature](doc/features/feat-001-news-digest.md) В· [Architecture](doc/architecture.md) В· [Verification](doc/verification-report.md) В· [State](doc/project-state.md)

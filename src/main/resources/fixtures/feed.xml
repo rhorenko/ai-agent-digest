@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Offline synthetic fixture</title>
+<entry>
+<title>Demonstrating independent verification of agent changes</title>
+<link href="https://example.org/fixture/verification"/>
+<published>{{PUBLISHED}}</published>
+<summary>Synthetic offline example: independent tests and measuring agent cycle costs. This is not real news.</summary>
+</entry>
+</feed>

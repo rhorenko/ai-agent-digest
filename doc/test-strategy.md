@@ -24,9 +24,11 @@ Derive positive, negative, boundary, configuration, and regression scenarios fro
 
 Map requirement/acceptance IDs in `acceptance-matrix.md`. Record commands, environment, outcome, limitations, and unrun checks in `verification-report.md`. `PASS` requires an actual run against the identified version.
 
-## Baseline template checks
+## Digest acceptance checks
 
 - `.\mvnw.cmd verify` (or `./mvnw verify`).
-- Run the packaged JAR and confirm message and exit code 0.
+- Run the packaged JAR offline against a separate real Mongo database; verify records, exit 0 and a deduplicated rerun.
 - Build the image from repository-root context.
-- Run the one-shot container and confirm message and exit code 0.
+- Run the one-shot container offline; verify message, records and rerun. Confirm busy/unresolved/configuration exits 3/2/1.
+- Use local HTTP stubs for source/Claude/Telegram contracts and Testcontainers for Mongo persistence, lock, unique index, crash recovery and the external-acceptance/database-write gap.
+- No paid Claude or real Telegram calls in automated verification. Model quality remains a separate intentional live check.

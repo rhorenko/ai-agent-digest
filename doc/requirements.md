@@ -1,33 +1,14 @@
 # Requirements
 
-This is the product-level requirement register. Use stable IDs such as `REQ-001` and link detailed delivery to a feature. Do not add requirements for the template itself unless maintaining the template is the product task.
+Source: user request, 2026-10-21. Delivery: [FEAT-001](features/feat-001-news-digest.md).
 
-## Functional requirements
-
-| ID | Requirement | Source | Status | Feature |
-|---|---|---|---|---|
-| _Add ID_ | _Observable required behavior_ | _Brief/user_ | Proposed | _Link_ |
-
-## Non-functional requirements
-
-| ID | Quality or constraint | Verification method | Status |
-|---|---|---|---|
-| _Add ID_ | _Measurable condition_ | _How it can be checked_ | Proposed |
-
-## Confirmed facts
-
-- [Facts explicitly supplied or validated.]
-
-## Assumptions
-
-- [Assumption, rationale, and validation plan.]
-
-## Open questions
-
-- [Question, owner, and blocking impact.]
-
-## Terminology
-
-| Term | Meaning |
+| ID | Requirement |
 |---|---|
-| _Term_ | _Single agreed definition_ |
+| REQ-001 | Retrieve attributable recent sources (20 default feeds, rolling 30 days); distribute candidate checks across sources and select at most two items with one bounded Claude request. |
+| REQ-002 | Validate structured analysis against retrieved candidates and retain source limitations. |
+| REQ-003 | Persist before delivery; normalize/deduplicate URLs, serialize batches and recover safe undelivered items. |
+| REQ-004 | Send at most two individual English Telegram messages per run by default, in score order; retain success, rejection and ambiguous outcomes. |
+| REQ-005 | Typed external configuration, secret safety and explicit one-shot exit status. |
+| REQ-006 | Unit/HTTP/Mongo tests plus real offline JAR and Docker verification. |
+
+Article content is untrusted. Never invent dates, URLs, articles or full-text access. No live paid calls or real messages are authorized.

@@ -1,45 +1,19 @@
 # Architecture
 
-## Template baseline
+One Maven module, Java 25, Spring Boot 4.0.5 and non-web ApplicationRunner/context closure remain.
 
-The repository currently contains one Maven module and a non-web Spring Boot one-shot process. `AgentDigestApplication` starts a Spring context, executes an `ApplicationRunner`, closes the context, and exits normally. Spring Boot manages dependency versions; Java compilation uses release 25 without preview features. The executable JAR is produced by `spring-boot-maven-plugin`.
+| Component | Responsibility |
+|---|---|
+| DigestProperties | Typed bounded settings; conditional live credential validation |
+| FeedSource | Secure RSS/Atom parsing, dates, original URL verification and excerpt provenance |
+| ClaudeAnalyzer / AnalysisValidator | Structured Messages call and strict candidate correspondence |
+| MongoDigestStore | Unique URL, batch mutex, run audit and durable delivery state |
+| TelegramSender / MessageFormatter | Plain English messages, bounded 429 retries and conservative ambiguity |
+| BatchProcessor | Recovery, retrieval, validated persistence, ordered delivery, exit status |
+| Offline fixtures | Same validator/processor, real Mongo, console sink |
 
-The baseline deliberately has no database, network endpoint, external integration, domain layers, or long-running loop. Add a component or dependency only when a feature establishes the need.
+Flow: candidates в†’ Claude candidate IDs and English analysis в†’ validation в†’ Mongo PENDING в†’ SENDING в†’ DELIVERED/RETRY/REJECTED/UNKNOWN. All selected items persist before any sends. Existing URLs skip reanalysis. Recovery-only sends stored safe items without Claude. Model cannot author source metadata.
 
-## Product context
+[ADR](adr/0001-bounded-feed-pipeline.md) defines actual integration inspection and failure guarantees. Mongo uses acknowledged majority writes and finite timeouts. Mutex scopes to one database; use one database per destination. Offline/live databases are separate. Runs retain processing timestamps, outcome, counts and safe error categories.
 
-[Describe external actors and systems after a product is defined.]
-
-## Components and responsibilities
-
-| Component | Responsibility | Dependencies |
-|---|---|---|
-| Application entry point | Start the one-shot process and manage context lifetime | Spring Boot |
-| _Future component_ | _Why it exists_ | _Explicit dependencies_ |
-
-## Data and interfaces
-
-[Define product-owned data and boundaries. Use typed contracts and validation at external boundaries.]
-
-## Error handling
-
-Unhandled startup or runner failures propagate and produce a non-zero process exit. Future expected failures must have explicit semantics; do not report fictional success or silently discard exceptions.
-
-## Configuration
-
-The baseline has no required environment variables or secrets. Document every added setting in `.env.example`, `docker/.env.example`, and relevant runbooks without committing values.
-
-## Testability
-
-Use plain unit tests for ordinary Java behavior and Spring context tests only for integration that requires Spring. Link acceptance evidence through `acceptance-matrix.md`.
-
-## Build and runtime
-
-Build with the Maven Wrapper and run the executable JAR locally or with the multi-stage Docker image. The container is a one-shot process and exposes no ports.
-
-## Technical constraints and risks
-
-- Java 25 without preview features.
-- Spring Boot 4.0.5 dependency management.
-- One module until a confirmed requirement justifies decomposition.
-- Product-specific constraints belong here or in linked ADRs.
+[ADR 0002](adr/0002-source-coverage.md): fetch feeds then verify candidates round-robin; permit only one permanent same-origin trailing-slash redirect while retaining original provenance. Default source/window/output limits are 20 feeds/30 days/two items.

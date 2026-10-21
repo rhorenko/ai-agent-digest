@@ -4,3 +4,39 @@ spring:
   main:
     web-application-type: none
     banner-mode: "off"
+
+logging:
+  level:
+    org.mongodb.driver: ERROR
+    org.springframework.boot.context.properties: OFF
+    org.springframework.boot.diagnostics: OFF
+
+digest:
+  offline: ${DIGEST_OFFLINE:false}
+  recovery-only: ${DIGEST_RECOVERY_ONLY:false}
+  profile: ${DIGEST_PROFILE:Senior Java Developer; Java, Spring Boot, Maven, MongoDB, PostgreSQL, Kafka; personal products and Telegram bots; Claude, Codex, GitHub Copilot, BMAD; agent workflows, harness engineering, context management, architecture, testing, independent verification and operating costs}
+  window: ${DIGEST_WINDOW:24h}
+  max-items: ${DIGEST_MAX_ITEMS:5}
+  max-candidates: ${DIGEST_MAX_CANDIDATES:20}
+  excerpt-chars: ${DIGEST_EXCERPT_CHARS:1500}
+  max-context-chars: ${DIGEST_MAX_CONTEXT_CHARS:40000}
+  timeout: ${DIGEST_TIMEOUT:30s}
+  max-response-bytes: ${DIGEST_MAX_RESPONSE_BYTES:2000000}
+  feeds: ${DIGEST_FEEDS:https://github.blog/changelog/feed/,https://github.blog/ai-and-ml/feed/,https://github.blog/engineering/feed/,https://openai.com/news/rss.xml,https://simonwillison.net/atom/entries/,https://huggingface.co/blog/feed.xml,https://blog.google/innovation-and-ai/technology/ai/rss/,https://research.google/blog/rss/,https://www.microsoft.com/en-us/research/feed/,https://devblogs.microsoft.com/agent-framework/feed/,https://blogs.nvidia.com/feed/,https://aws.amazon.com/blogs/machine-learning/feed/,https://blog.jetbrains.com/ai/feed/,https://blog.jetbrains.com/idea/feed/,https://spring.io/blog.atom,https://inside.java/feed.xml,https://www.docker.com/feed/,https://feed.infoq.com/,https://stackoverflow.blog/feed/,https://ollama.com/blog/rss.xml}
+  mongo-uri: ${MONGODB_URI:mongodb://localhost:27017/?retryWrites=true&w=majority}
+  database: ${MONGODB_DATABASE:agent_digest}
+  claude:
+    endpoint: ${CLAUDE_ENDPOINT:https://api.anthropic.com/v1/messages}
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${CLAUDE_MODEL:}
+    max-tokens: ${CLAUDE_MAX_TOKENS:16000}
+    retries: ${CLAUDE_RETRIES:1}
+    effort: ${CLAUDE_EFFORT:low}
+    timeout: ${CLAUDE_TIMEOUT:120s}
+  telegram:
+    endpoint: ${TELEGRAM_ENDPOINT:https://api.telegram.org}
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    chat-id: ${TELEGRAM_CHAT_ID:}
+    retries: ${TELEGRAM_RETRIES:1}
+    max-retry-after: ${TELEGRAM_MAX_RETRY_AFTER:30s}
+    interval: ${TELEGRAM_INTERVAL:1s}

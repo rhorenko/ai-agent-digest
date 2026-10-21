@@ -1,6 +1,6 @@
 # Project documentation
 
-All project documentation lives in this directory. Root `README.md` explains template use; this file maps durable product artifacts.
+All project documentation lives in this directory. Root `README.md` explains Agentic News Digest execution; this file maps durable product artifacts. Active delivery: [FEAT-001](features/feat-001-news-digest.md), [current state](project-state.md), [evidence](verification-report.md).
 
 ## Product definition
 
