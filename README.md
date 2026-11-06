@@ -1,105 +1,59 @@
-# Java 25 agent-development template
+# Agentic News Digest
 
-A reusable Maven project for minimal Spring Boot applications and file-guided agent work. It contains no product integrations or domain logic. Roles are repository conventions, not an installed multi-agent framework.
+A Java 25 / Spring Boot 4.0.5 one-shot job that reads recent RSS/Atom metadata, asks Claude to select and analyze it, stores the results in MongoDB, and sends one Telegram message per selected item. The job closes after one batch; schedule it externally if desired.
 
-## Prerequisites
-
-- JDK 25
-- Git
-- Docker with Compose for container workflows
-- PowerShell 7 or Windows PowerShell 5.1 for `scripts/*.ps1`
-
-Maven installation is not required; use the checked-in Maven Wrapper.
-
-## Repository layout
-
-- `AGENTS.md` — entry point for Codex and workflow rules.
-- `roles/` — sponsor, product, architecture, development, and QA instructions.
-- `doc/` — product artifacts, current state, templates, evidence, and runbooks.
-- `src/` — minimal one-shot Spring Boot application and tests.
-- `docker/` — image and Compose definitions.
-- `scripts/` — location-independent PowerShell helpers.
-
-## Build and test
-
-On Linux/macOS:
-
-```bash
-./mvnw verify
-```
-
-On Windows:
+## Build and verify
 
 ```powershell
 .\mvnw.cmd verify
-# or
-.\scripts\verify.ps1
+# Linux/macOS: ./mvnw verify
 ```
 
-## Run locally
+The test suite uses HTTP stubs and MongoDB Testcontainers. Docker is required for the MongoDB test; when unavailable that test is skipped. No test calls Claude or Telegram. The executable JAR is `target/agent-digest-0.0.1-SNAPSHOT.jar`.
+
+## Offline demo with Docker
 
 ```powershell
-.\scripts\run-local.ps1
+docker compose -f docker/compose.yaml build app
+docker compose -f docker/compose.yaml run --rm -e DIGEST_OFFLINE=true -e MONGODB_DATABASE=agent_digest_demo app
 ```
 
-Or package and run directly:
+This runs versioned source and analysis fixtures through the same validation, MongoDB and delivery pipeline. Messages print to stdout instead of going to Telegram. Use a separate demo database: fixture records are persisted as `SENT` and must not be mixed with live records. Run the command again to exercise deduplication. MongoDB runs in a named persistent volume; do not delete it to reset a demo.
+
+## Configure a live run
+
+Copy `.env.example` to an untracked `.env` and edit it locally, not in chat. Set `ANTHROPIC_API_KEY`, `CLAUDE_MODEL`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. Then run:
 
 ```powershell
-.\mvnw.cmd package
+docker compose --env-file .env -f docker/compose.yaml run --rm app
+# or, after creating .env: .\scripts\run-container.ps1
+```
+
+Docker Compose defaults `MONGODB_URI` to `mongodb://mongo:27017`. For a locally installed MongoDB and local JAR, export the variables in your shell or IDE; the JAR does not automatically load `.env`:
+
+```powershell
+$env:MONGODB_URI = 'mongodb://localhost:27017'
+$env:MONGODB_DATABASE = 'agent_digest'
+# Set the credentials locally in your shell or IDE, then:
 java -jar .\target\agent-digest-0.0.1-SNAPSHOT.jar
 ```
 
-The application prints `Application completed successfully.` and exits with code 0. Replace the demonstration `ApplicationRunner` in `AgentDigestApplication` with the concrete product entry flow. Change the execution model when a future product must be a server or long-running worker.
+Do not expose the bundled unauthenticated MongoDB service beyond its private Compose network. For other deployments provide an appropriately secured `MONGODB_URI` and manage backups and access separately. Secrets are never needed for offline mode.
 
-## Run with Docker
+## Sources, model and limits
 
-```powershell
-.\scripts\build-container.ps1
-.\scripts\run-container.ps1
-```
+The only default feed is GitHub's official AI and ML feed. Set `DIGEST_FEEDS` to a comma-separated list of HTTPS RSS or Atom feeds to widen coverage. This does not cover every Claude, Codex or BMAD announcement. The application checks that an original HTTPS link returns a successful HEAD response; inaccessible, redirected, undated, stale or future-dated entries are excluded. Feeds may supply only headlines and excerpts; full article text is not fetched, and summaries must disclose that limitation. The offline fixture uses a synthetic URL and does not perform network verification.
 
-Equivalent Compose commands from the repository root:
+Set `DIGEST_WINDOW_HOURS` (default 24), `DIGEST_MAX_ITEMS` (5), `DIGEST_MAX_CANDIDATES` (30), `DIGEST_TIMEOUT_SECONDS` (30), `DIGEST_MAX_OUTPUT_TOKENS` (2048), and `DIGEST_TELEGRAM_RETRIES` (2). Adjust the profile by setting `DIGEST_PROFILE` to a Spring resource such as `file:/absolute/path/profile.txt`; mount the file into a container if needed. The bundled versioned prompt, JSON schema and profile are in `src/main/resources/prompts/`. Feed content is treated as untrusted data. The model may select only local candidate IDs; Java validates the entire response before persisting its analysis.
 
-```powershell
-docker compose -f docker/compose.yaml build
-docker compose -f docker/compose.yaml run --rm app
-```
+There was no `spring-claude` dependency in the checked-in POM or resolved dependency tree. The implementation uses Anthropic's documented Messages HTTP API with JSON schema output, rather than assuming that ordinary model calls have web search. See [ADR 0001](doc/adr/0001-source-bound-analysis.md). The live provider response and selection quality have not been verified with a paid call.
 
-See `doc/runbooks/container-build.md` and `doc/runbooks/deployment.md` for configuration, logs, exit codes, and cleanup.
+## Recovery and delivery semantics
 
-## Use the roles
+A unique normalized URL prevents duplicates. Saved `PENDING` and eligible `FAILED` records are sent in descending score order, including previously persisted items; a rerun does not resend `SENT` records. `retry_after` is persisted when a Telegram rate-limit wait exceeds the bounded in-process retries. A rejected or unavailable feed/model does not prevent retrying existing pending records, but the batch still exits nonzero.
 
-Examples:
+A network timeout, 5xx response, malformed success response, or process crash after marking `SENDING` has an **ambiguous** outcome. Telegram may have accepted the message even if MongoDB has not recorded it. Such records are never retried automatically. Delivery is not exactly once. Inspect Telegram and `news_items` before changing a `SENDING` or `AMBIGUOUS` record to `SENT` or `FAILED` manually. Never reset a record without deciding whether a duplicate is acceptable.
 
-- `Работай как po: подготовь требования для …`
-- `Работай как architect: проанализируй feature …`
-- `Работай как dev: реализуй feature …`
-- `Работай как qa: проверь feature …`
-- `Проведи задачу через роли от идеи до проверенного результата`
+A MongoDB document in `batch_locks` prevents overlapping executions. A crash can leave the lock behind; after verifying that no batch is still active and reviewing all `SENDING` records, remove only the `digest` lock as described in [deployment and recovery](doc/runbooks/deployment.md). Do not delete MongoDB volumes or databases as routine cleanup. A nonzero exit means startup, retrieval, analysis, database or delivery failed, or an unresolved delivery remains.
 
-The agent reads `AGENTS.md`, `doc/project-state.md`, and the selected lowercase file under `roles/`. For a full cycle it proceeds sequentially; a small task does not require every role or document.
-
-## Create the first feature
-
-1. Fill in the relevant product sections of `doc/project-brief.md` and `doc/requirements.md`.
-2. Copy `doc/features/_template.md` to `doc/features/feat-001-short-name.md`.
-3. Assign stable requirement and acceptance IDs and update `doc/backlog.md`.
-4. Create `doc/plans/feat-001-plan.md` from the plan template before non-trivial implementation.
-5. Link checks and actual outcomes in the acceptance matrix and verification report.
-
-## Continue in a new chat
-
-Ask the agent to read `AGENTS.md` and continue from `doc/project-state.md`. That file points to the active role, feature, plan, decisions, known blockers, checks, and exact next action without requiring the entire history.
-
-## Adapt this template
-
-- [ ] Update project name and description.
-- [ ] Change Maven coordinates if the product needs different ownership.
-- [ ] Rename the Java package and directories consistently.
-- [ ] Rename or replace the main class and demonstration runner.
-- [ ] Complete the product brief with confirmed facts.
-- [ ] Add only configuration the product actually uses; update `.env.example` files.
-- [ ] Set the desired container image name in `docker/.env.example` or the environment.
-- [ ] Remove demonstration content after product behavior replaces it.
-
-Detailed local, test, container, deployment, and troubleshooting guidance lives in `doc/runbooks/`.
+See [project state](doc/project-state.md), [acceptance matrix](doc/acceptance-matrix.md), and [verification report](doc/verification-report.md) for current evidence and limitations.

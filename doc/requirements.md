@@ -1,33 +1,10 @@
 # Requirements
 
-This is the product-level requirement register. Use stable IDs such as `REQ-001` and link detailed delivery to a feature. Do not add requirements for the template itself unless maintaining the template is the product task.
+| ID | Requirement | Feature |
+|---|---|---|
+| REQ-001 | Discover and analyze recent sourced material for the specified profile, with configurable profile, time window and limit. | [FEAT-001](features/feat-001-agentic-news.md) |
+| REQ-002 | Persist validated analysis and delivery outcomes; deduplicate and recover undelivered items safely. | FEAT-001 |
+| REQ-003 | Send separate English Telegram messages in importance order; report failures accurately. | FEAT-001 |
+| REQ-004 | Provide secure configuration, reproducible offline verification and one-shot operation. | FEAT-001 |
 
-## Functional requirements
-
-| ID | Requirement | Source | Status | Feature |
-|---|---|---|---|---|
-| _Add ID_ | _Observable required behavior_ | _Brief/user_ | Proposed | _Link_ |
-
-## Non-functional requirements
-
-| ID | Quality or constraint | Verification method | Status |
-|---|---|---|---|
-| _Add ID_ | _Measurable condition_ | _How it can be checked_ | Proposed |
-
-## Confirmed facts
-
-- [Facts explicitly supplied or validated.]
-
-## Assumptions
-
-- [Assumption, rationale, and validation plan.]
-
-## Open questions
-
-- [Question, owner, and blocking impact.]
-
-## Terminology
-
-| Term | Meaning |
-|---|---|
-| _Term_ | _Single agreed definition_ |
+Publication dates are required for a recent selection; unavailable full text is not represented as analyzed. Live API calls and real messages require explicit authorization.

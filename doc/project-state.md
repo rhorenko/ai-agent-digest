@@ -1,60 +1,18 @@
 # Project state
 
-Last updated: 2026-10-20
+Last updated: 2026-10-29
 
-## Stage
-
-Template ready for product adaptation.
-
-## Current goal
-
-Deliver a reusable Java 25, Spring Boot 4.0.5 Maven template with role instructions, documentation, tests, Docker, and Windows scripts.
-
-## Active role
-
-None. Select a role from the next product task.
-
-## Active feature and plan
-
-No product feature or product plan exists; this work initializes the template itself.
-
-## Completed work
-
-- Existing Maven coordinates and Java package inspected and retained.
-- Root workflow, all role files, documentation templates, runbooks, Java baseline, Docker files, and Windows scripts created.
-- Independent verification covered structure, Maven, JAR, scripts, image contents, and container execution.
-
-## Blockers
-
-None currently known.
-
-## Open questions
-
-None required to finish the requested template.
-
-## Accepted assumptions
-
-- The existing coordinates `com.agents.digest:agent-digest` and package `com.agents.digest` remain the adaptation starting point.
-- Deployment in this template means local container execution only.
-
-## Performed checks
-
-- Spring Boot 4.0.5 artifact availability confirmed in Maven Central.
-- Temurin Java 25.0.2 JDK and JRE container manifests confirmed available.
-- `.\mvnw.cmd verify`: PASS; 1 test, 0 failures/errors/skips.
-- Executable JAR launch: PASS; expected message and exit code 0.
-- PowerShell script invocation outside the repository: PASS.
-- Compose configuration and Docker image build: PASS.
-- Container launch: PASS; expected message, exit code 0, user `app`, no `javac` in runtime image.
-
-## Exact next action
-
-Adapt `doc/project-brief.md` for the first concrete product, then ask `po` to create `doc/features/feat-001-short-name.md`.
+## Stage and goal
+FEAT-001 implemented and verified offline; live integration remains unverified by user instruction.
 
 ## Current artifacts
+[Feature](features/feat-001-agentic-news.md), [plan](plans/feat-001-plan.md), [architecture](architecture.md), [ADR](adr/0001-source-bound-analysis.md), [acceptance matrix](acceptance-matrix.md), [verification report](verification-report.md), [README](../README.md).
 
-- `AGENTS.md`
-- `README.md`
-- `doc/architecture.md`
-- `doc/verification-report.md`
-- `roles/`
+## Completed
+One-shot configurable RSS/Atom, Claude structured analysis, MongoDB persistence and safe recovery, Telegram delivery, fixtures and Compose. Maven verify passed 20 tests including MongoDB Testcontainers. The final executable JAR and container completed offline against separate MongoDB databases; a container rerun did not resend. The verification volumes were retained.
+
+## Limitations
+No existing `spring-claude` client was present; the documented Anthropic Messages HTTP API is used. No live paid Claude call or real Telegram send has been authorized or performed. Default coverage is the GitHub AI/ML feed, and source material is metadata rather than full articles. Delivery can be ambiguous and is not exactly once. A crash may require manual lock and delivery-state review.
+
+## Exact next action
+For a live run, the owner configures credentials and chat ID locally per README, selects additional trusted feeds if needed, and runs the batch. Validate live provider compatibility and relevance only when a paid call and real message are explicitly authorized.

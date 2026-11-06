@@ -1,34 +1,14 @@
-# Deployment
+# Deployment and recovery
 
-In this template, **deployment means local container execution only**. The repository does not claim a production deployment design, registry publication, orchestration, monitoring, backup, security hardening for a specific environment, or rollback automation.
+The job runs once and terminates. Run `docker compose --env-file .env -f docker/compose.yaml run --rm app` from the repository root. The app waits for MongoDB health and returns 0 only on successful completion. It does not restart automatically. Compose stores MongoDB in the named `mongo-data` volume. `docker compose -f docker/compose.yaml stop` stops services without deleting data; never use `down -v` as routine cleanup.
 
-## Run and observe
-
-```powershell
-docker compose -f docker/compose.yaml run --rm app
-# or
-.\scripts\run-container.ps1
-```
-
-Compose streams the one-shot process logs to the terminal. The expected output contains `Application completed successfully.`. Inspect the shell exit code immediately afterward:
+To inspect the bundled MongoDB (use the appropriate project name and database):
 
 ```powershell
-$LASTEXITCODE
+docker compose -f docker/compose.yaml exec -T mongo mongosh --quiet agent_digest --eval 'db.news_items.find({}, {url:1,status:1,messageId:1,error:1,retryAt:1}).toArray()'
+docker compose -f docker/compose.yaml exec -T mongo mongosh --quiet agent_digest --eval 'db.batch_locks.find().toArray()'
 ```
 
-The expected exit code is `0`. No ports, health check, or restart policy are defined because the baseline is not a service.
+States: `PENDING` is saved but not attempted; `FAILED` is a definite rejection and retries at or after `retryAt`; `SENDING` or `AMBIGUOUS` means the outcome may be unknown; `SENT` is confirmed. If the process died or a database update failed after Telegram accepted a message, even `SENDING` may represent a delivered message. Inspect the chat and record. Only after making a deliberate recovery decision, update that specific record to `SENT` or `FAILED`, recording appropriate message ID/error. Do not automatically retry uncertain results.
 
-## Configuration
-
-Set only variables that the adapted product actually consumes. Add them to the Compose service explicitly and document non-secret examples. Never place credentials in the Dockerfile, image, or committed `.env` file.
-
-## Cleanup
-
-`compose run --rm` removes its stopped container. Remove any remaining Compose resources and the local image with:
-
-```powershell
-docker compose -f docker/compose.yaml down --remove-orphans
-docker image rm agent-digest:local
-```
-
-Review the target image name before removal when `IMAGE_NAME` or `IMAGE_TAG` is customized.
+A lock is intentionally not expired automatically. First confirm no batch process is running, inspect every uncertain record, and only then remove the single lock: `db.batch_locks.deleteOne({_id:"digest"})` in the correct database. Never remove the lock while another batch may be active. This is a one-shot local deployment, not a backup, monitoring, authentication or production-hardening solution.

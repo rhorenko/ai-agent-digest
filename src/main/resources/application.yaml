@@ -4,3 +4,19 @@ spring:
   main:
     web-application-type: none
     banner-mode: "off"
+digest:
+  offline: ${DIGEST_OFFLINE:false}
+  mongo-uri: ${MONGODB_URI:mongodb://localhost:27017}
+  mongo-database: ${MONGODB_DATABASE:agent_digest}
+  anthropic-key: ${ANTHROPIC_API_KEY:}
+  model: ${CLAUDE_MODEL:claude-sonnet-4-6}
+  telegram-token: ${TELEGRAM_BOT_TOKEN:}
+  telegram-chat-id: ${TELEGRAM_CHAT_ID:}
+  feeds: ${DIGEST_FEEDS:https://github.blog/ai-and-ml/feed/}
+  profile: ${DIGEST_PROFILE:classpath:prompts/profile-v1.txt}
+  window-hours: ${DIGEST_WINDOW_HOURS:24}
+  max-items: ${DIGEST_MAX_ITEMS:5}
+  max-candidates: ${DIGEST_MAX_CANDIDATES:30}
+  timeout-seconds: ${DIGEST_TIMEOUT_SECONDS:30}
+  max-output-tokens: ${DIGEST_MAX_OUTPUT_TOKENS:2048}
+  telegram-retries: ${DIGEST_TELEGRAM_RETRIES:2}

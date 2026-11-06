@@ -1,8 +1,37 @@
 name: agent-digest
-
 services:
+  mongo:
+    image: mongo:8.0
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
   app:
     image: "${IMAGE_NAME:-agent-digest}:${IMAGE_TAG:-local}"
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      DIGEST_OFFLINE: ${DIGEST_OFFLINE:-false}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-agent_digest}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-6}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      DIGEST_FEEDS: ${DIGEST_FEEDS:-https://github.blog/ai-and-ml/feed/}
+      DIGEST_PROFILE: ${DIGEST_PROFILE:-classpath:prompts/profile-v1.txt}
+      DIGEST_WINDOW_HOURS: ${DIGEST_WINDOW_HOURS:-24}
+      DIGEST_MAX_ITEMS: ${DIGEST_MAX_ITEMS:-5}
+      DIGEST_MAX_CANDIDATES: ${DIGEST_MAX_CANDIDATES:-30}
+      DIGEST_TIMEOUT_SECONDS: ${DIGEST_TIMEOUT_SECONDS:-30}
+      DIGEST_MAX_OUTPUT_TOKENS: ${DIGEST_MAX_OUTPUT_TOKENS:-2048}
+      DIGEST_TELEGRAM_RETRIES: ${DIGEST_TELEGRAM_RETRIES:-2}
+volumes:
+  mongo-data:

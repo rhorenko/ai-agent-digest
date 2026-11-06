@@ -1,47 +1,16 @@
 # Project brief
 
-This file is for the future product, not a fictional example. Replace bracketed prompts only when information is confirmed; mark assumptions explicitly.
+## Problem and audience
+A senior Java developer needs to identify consequential developments in agentic software engineering without reviewing promotional and repetitive news manually.
 
-## Problem
+## Value and MVP
+A one-shot batch selects up to five useful, recent, sourced items and delivers individual English Telegram messages. Persist analysis and delivery state so reruns avoid already delivered items and recover safely. An empty selection is valid. Profile, window and limit are configurable.
 
-[What problem exists today, for whom, and in what context?]
-
-## Target audience
-
-[Primary users or stakeholders and relevant characteristics.]
-
-## Value
-
-[What observable improvement should the product create?]
-
-## Expected outcome
-
-[Describe the desired outcome without prescribing implementation.]
-
-## MVP scope
-
-[Minimum capabilities required to test the value proposition.]
-
-## Out of scope
-
-[Explicit exclusions for the current scope.]
-
-## Priorities
-
-[Ordered priorities and tie-breaking rules.]
-
-## Constraints
-
-[Time, policy, operational, compatibility, or other confirmed limits.]
+## Boundaries and constraints
+Java 25, Spring Boot 4.0.5, Maven and the existing single-module one-shot execution. No web UI, scheduler, queue, paid API calls or real Telegram sends during verification. Source material is untrusted; only retrieved URLs and dates may be used. Delivery cannot be exactly once.
 
 ## Success signals
-
-[Measurable or observable evidence of success.]
+Verifiable sourced selection, durable delivery state, independent requirement-based checks, a reproducible offline execution, and an observable process exit status.
 
 ## Assumptions
-
-[Unconfirmed statements currently used for progress.]
-
-## Open questions
-
-[Question, owner, and effect if unresolved.]
+RSS/Atom metadata provides limited evidence, not full article analysis. Unknown publication dates are excluded from the 24-hour selection. Timeouts on Telegram delivery are ambiguous and require manual review.
